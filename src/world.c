@@ -626,16 +626,6 @@ static
 void fini_component_lifecycle(
     ecs_world_t *world)
 {
-    int32_t i, count = ecs_sparse_count(world->type_info);
-    for (i = 0; i < count; i ++) {
-        ecs_type_info_t *type_info = ecs_sparse_get(
-            world->type_info, ecs_type_info_t, i);
-        ecs_assert(type_info != NULL, ECS_INTERNAL_ERROR, NULL);
-
-        ecs_vector_free(type_info->on_add);
-        ecs_vector_free(type_info->on_remove);
-    }
-
     ecs_sparse_free(world->type_info);
 }
 
@@ -684,6 +674,7 @@ void fini_id_triggers(
     while ((t = ecs_map_next(&it, ecs_id_trigger_t, NULL))) {
         ecs_map_free(t->on_add_triggers);
         ecs_map_free(t->on_remove_triggers);
+        ecs_map_free(t->on_set_triggers);
     }
     ecs_map_free(world->id_triggers);
     ecs_sparse_free(world->triggers);
@@ -1204,6 +1195,9 @@ void register_table_for_id(
         if (ecs_triggers_get(world, id, EcsOnRemove)) {
             table->flags |= EcsTableHasOnRemove;
         }
+        if (ecs_triggers_get(world, id, EcsOnSet)) {
+            table->flags |= EcsTableHasOnSet;
+        }        
     }
 }
 

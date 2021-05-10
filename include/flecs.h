@@ -429,7 +429,7 @@ typedef struct ecs_trigger_desc_t {
      * the term field is ignored. */
     const char *expr;
 
-    /* Events to trigger on (OnAdd, OnRemove) */
+    /* Events to trigger on (EcsOnAdd, EcsOnRemove, EcsOnSet) */
     ecs_entity_t events[ECS_TRIGGER_DESC_EVENT_COUNT_MAX];
 
     /* Callback to invoke on a trigger */
