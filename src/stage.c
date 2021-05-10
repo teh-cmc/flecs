@@ -10,13 +10,13 @@ ecs_op_t* new_defer_op(ecs_stage_t *stage) {
 static 
 void new_defer_component_ids(
     ecs_op_t *op, 
-    const ecs_entities_t *components)
+    const ecs_ids_t *components)
 {
     int32_t components_count = components->count;
     if (components_count == 1) {
         ecs_entity_t component = components->array[0];
         op->component = component;
-        op->components = (ecs_entities_t) {
+        op->components = (ecs_ids_t) {
             .array = NULL,
             .count = 1
         };
@@ -27,7 +27,7 @@ void new_defer_component_ids(
         op->components.count = components_count;
     } else {
         op->component = 0;
-        op->components = (ecs_entities_t){ 0 };
+        op->components = (ecs_ids_t){ 0 };
     }
 }
 
@@ -37,7 +37,7 @@ bool defer_add_remove(
     ecs_stage_t *stage,
     ecs_op_kind_t op_kind,
     ecs_entity_t entity,
-    ecs_entities_t *components)
+    ecs_ids_t *components)
 {
     if (stage->defer) {
         ecs_entity_t scope = stage->scope;
@@ -244,7 +244,7 @@ bool ecs_defer_bulk_new(
     ecs_world_t *world,
     ecs_stage_t *stage,
     int32_t count,
-    const ecs_entities_t *components_ids,
+    const ecs_ids_t *components_ids,
     void **component_data,
     const ecs_entity_t **ids_out)
 {
@@ -317,7 +317,7 @@ bool ecs_defer_new(
     ecs_world_t *world,
     ecs_stage_t *stage,
     ecs_entity_t entity,
-    ecs_entities_t *components)
+    ecs_ids_t *components)
 {   
     return defer_add_remove(world, stage, EcsOpNew, entity, components);
 }
@@ -326,7 +326,7 @@ bool ecs_defer_add(
     ecs_world_t *world,
     ecs_stage_t *stage,
     ecs_entity_t entity,
-    ecs_entities_t *components)
+    ecs_ids_t *components)
 {   
     return defer_add_remove(world, stage, EcsOpAdd, entity, components);
 }
@@ -335,7 +335,7 @@ bool ecs_defer_remove(
     ecs_world_t *world,
     ecs_stage_t *stage,
     ecs_entity_t entity,
-    ecs_entities_t *components)
+    ecs_ids_t *components)
 {
     return defer_add_remove(world, stage, EcsOpRemove, entity, components);
 }
