@@ -1358,7 +1358,7 @@ void do_register_each_id(
             has_childof = true;
         } 
 
-        do_register_id(world, table, id, i, unregister);
+        do_register_id(world, table, ecs_strip_generation(id), i, unregister);
 
         if (ECS_HAS_ROLE(id, PAIR)) {
             ecs_entity_t pred_w_wildcard = ecs_pair(
@@ -1417,6 +1417,7 @@ ecs_id_record_t* ecs_ensure_id_record(
     const ecs_world_t *world,
     ecs_id_t id)
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     return ecs_map_ensure(world->id_index, ecs_id_record_t, id);
 }
 
@@ -1424,6 +1425,7 @@ ecs_id_record_t* ecs_get_id_record(
     const ecs_world_t *world,
     ecs_id_t id)
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     return ecs_map_get(world->id_index, ecs_id_record_t, id);
 }
 
@@ -1431,6 +1433,7 @@ void ecs_clear_id_record(
     const ecs_world_t *world,
     ecs_id_t id)    
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     ecs_id_record_t *r = ecs_get_id_record(world, id);
     if (!r) {
         return;

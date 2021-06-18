@@ -48,6 +48,10 @@ void Entity_init_w_with(void);
 void Entity_init_w_with_w_name(void);
 void Entity_init_w_with_w_scope(void);
 void Entity_init_w_with_w_name_scope(void);
+void Entity_strip_generation(void);
+void Entity_strip_generation_from_recycled_id(void);
+void Entity_strip_generation_from_id_w_role(void);
+void Entity_strip_generation_from_pair(void);
 
 // Testsuite 'New'
 void New_setup(void);
@@ -433,6 +437,7 @@ void Hierarchies_add_child_to_recycled_parent(void);
 void Hierarchies_get_type_after_recycled_parent_add(void);
 void Hierarchies_rematch_after_add_to_recycled_parent(void);
 void Hierarchies_cascade_after_recycled_parent_change(void);
+void Hierarchies_scope_iter_recycled_parent(void);
 
 // Testsuite 'Add_bulk'
 void Add_bulk_add_comp_from_comp_to_empty(void);
@@ -924,6 +929,12 @@ void Queries_only_from_singleton(void);
 void Queries_only_not_from_entity(void);
 void Queries_only_not_from_singleton(void);
 void Queries_get_filter(void);
+void Queries_get_component_size(void);
+void Queries_get_tag_size(void);
+void Queries_get_pair_relation_size(void);
+void Queries_get_pair_object_size(void);
+void Queries_get_pair_tag_size(void);
+void Queries_get_component_size_other_entity(void);
 
 // Testsuite 'Pairs'
 void Pairs_type_w_one_pair(void);
@@ -2133,6 +2144,22 @@ bake_test_case Entity_testcases[] = {
     {
         "init_w_with_w_name_scope",
         Entity_init_w_with_w_name_scope
+    },
+    {
+        "strip_generation",
+        Entity_strip_generation
+    },
+    {
+        "strip_generation_from_recycled_id",
+        Entity_strip_generation_from_recycled_id
+    },
+    {
+        "strip_generation_from_id_w_role",
+        Entity_strip_generation_from_id_w_role
+    },
+    {
+        "strip_generation_from_pair",
+        Entity_strip_generation_from_pair
     }
 };
 
@@ -3616,6 +3643,10 @@ bake_test_case Hierarchies_testcases[] = {
     {
         "cascade_after_recycled_parent_change",
         Hierarchies_cascade_after_recycled_parent_change
+    },
+    {
+        "scope_iter_recycled_parent",
+        Hierarchies_scope_iter_recycled_parent
     }
 };
 
@@ -5457,6 +5488,30 @@ bake_test_case Queries_testcases[] = {
     {
         "get_filter",
         Queries_get_filter
+    },
+    {
+        "get_component_size",
+        Queries_get_component_size
+    },
+    {
+        "get_tag_size",
+        Queries_get_tag_size
+    },
+    {
+        "get_pair_relation_size",
+        Queries_get_pair_relation_size
+    },
+    {
+        "get_pair_object_size",
+        Queries_get_pair_object_size
+    },
+    {
+        "get_pair_tag_size",
+        Queries_get_pair_tag_size
+    },
+    {
+        "get_component_size_other_entity",
+        Queries_get_component_size_other_entity
     }
 };
 
@@ -9432,7 +9487,7 @@ static bake_test_suite suites[] = {
         "Entity",
         NULL,
         NULL,
-        39,
+        43,
         Entity_testcases
     },
     {
@@ -9495,7 +9550,7 @@ static bake_test_suite suites[] = {
         "Hierarchies",
         Hierarchies_setup,
         NULL,
-        81,
+        82,
         Hierarchies_testcases
     },
     {
@@ -9628,7 +9683,7 @@ static bake_test_suite suites[] = {
         "Queries",
         NULL,
         NULL,
-        37,
+        43,
         Queries_testcases
     },
     {

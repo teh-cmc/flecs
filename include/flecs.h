@@ -2168,6 +2168,11 @@ ecs_entity_t ecs_get_alive(
     const ecs_world_t *world,
     ecs_entity_t e);
 
+/** Strip generation id from entity. */
+FLECS_API
+ecs_id_t ecs_strip_generation(
+    ecs_entity_t e);
+
 /** Ensure id is alive.
  * This operation ensures that the provided id is alive. This is useful in
  * scenarios where an application has an existing id that has not been created

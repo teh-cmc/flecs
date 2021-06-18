@@ -99,6 +99,28 @@ void* get_term(
     }
 }
 
+static
+size_t table_column_size(
+    ecs_table_t *table,
+    int32_t column_index)
+{
+    /* See ecs_iter_type */
+    ecs_assert(table != NULL, ECS_INVALID_PARAMETER, NULL);
+    ecs_assert(column_index >= 0, ECS_INVALID_PARAMETER, NULL);
+    
+    ecs_assert(column_index < ecs_vector_count(table->type), 
+        ECS_INVALID_PARAMETER, NULL);
+
+    if (table->column_count <= column_index) {
+        return 0;
+    }
+
+    ecs_data_t *data = ecs_table_get_data(table);
+    ecs_column_t *column = &data->columns[column_index];
+    
+    return ecs_to_size_t(column->size);
+}
+
 
 /* --- Public API --- */
 
@@ -197,6 +219,16 @@ size_t ecs_term_size(
     ecs_assert(it->table != NULL, ECS_INTERNAL_ERROR, NULL);
     ecs_assert(it->table->columns != NULL, ECS_INTERNAL_ERROR, NULL);
     int32_t table_column = it->table->columns[index - 1];
+    
+    if (table_column == 0) {
+        return 0;
+    } else if (table_column < 0) {
+        ecs_entity_t src = it->table->sources[index - 1];
+        ecs_record_t *r = ecs_eis_get(it->world, src);
+        ecs_assert(r != NULL, ECS_INTERNAL_ERROR, NULL);
+        return table_column_size(r->table, -table_column - 1);
+    }
+
     return ecs_iter_column_size(it, table_column - 1);
 }
 
@@ -254,19 +286,8 @@ size_t ecs_iter_column_size(
     /* See ecs_iter_type */
     ecs_assert(it->table != NULL, ECS_INVALID_PARAMETER, NULL);
     ecs_assert(it->table->table != NULL, ECS_INTERNAL_ERROR, NULL);
-    
-    ecs_table_t *table = it->table->table;
-    ecs_assert(column_index < ecs_vector_count(table->type), 
-        ECS_INVALID_PARAMETER, NULL);
-
-    if (table->column_count <= column_index) {
-        return 0;
-    }
-
-    ecs_column_t *columns = it->table_columns;
-    ecs_column_t *column = &columns[column_index];
-    
-    return ecs_to_size_t(column->size);
+    ecs_assert(column_index >= 0, ECS_INVALID_PARAMETER, NULL);
+    return table_column_size(it->table->table, column_index);
 }
 
 // DEPRECATED

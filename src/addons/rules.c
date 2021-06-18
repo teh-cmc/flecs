@@ -221,6 +221,7 @@ ecs_rule_op_t* create_operation(
 
     ecs_rule_op_t *result = &rule->operations[cur];
     memset(result, 0, sizeof(ecs_rule_op_t));
+
     return result;
 }
 
@@ -452,7 +453,7 @@ ecs_entity_t* rule_get_sources_frame(
     ecs_rule_iter_t *it,
     int32_t frame)    
 {
-    return &it->sources[frame * it->rule->filter.term_count];
+    return &it->table.sources[frame * it->rule->filter.term_count];
 }
 
 static
@@ -1152,7 +1153,7 @@ int scan_variables(
 
         /* Evaluate the subject. The predicate and object are not evaluated, 
          * since they never can be elected as root. */
-        if (!term->args[0].entity || term->args[0].entity == EcsThis) {
+        if (term->args[0].var == EcsVarIsVariable) {
             const char *subj_name = term->args[0].name;
 
             ecs_rule_var_t *subj = find_variable(
@@ -2097,6 +2098,7 @@ void ecs_rule_fini(
     for (i = 0; i < rule->variable_count; i ++) {
         ecs_os_free(rule->variables[i].name);
     }
+
     ecs_os_free(rule->variables);
     ecs_os_free(rule->operations);
 
@@ -2320,7 +2322,7 @@ ecs_iter_t ecs_rule_iter(
             it->columns = ecs_os_malloc(rule->operation_count * 
                 rule->filter.term_count * ECS_SIZEOF(int32_t));
 
-            it->sources = ecs_os_calloc(rule->operation_count *
+            it->table.sources = ecs_os_calloc(rule->operation_count *
                 rule->filter.term_count * ECS_SIZEOF(ecs_entity_t));
         }
     }
@@ -2341,8 +2343,6 @@ ecs_iter_t ecs_rule_iter(
     if (result.column_count) {
         it->table.components = ecs_os_malloc(
             result.column_count * ECS_SIZEOF(ecs_entity_t));
-        it->table.sources = ecs_os_malloc(
-            result.column_count * ECS_SIZEOF(ecs_entity_t));            
     }
 
     return result;
@@ -2354,7 +2354,7 @@ void ecs_rule_iter_free(
     ecs_rule_iter_t *it = &iter->iter.rule;
     ecs_os_free(it->registers);
     ecs_os_free(it->columns);
-    ecs_os_free(it->sources);
+    ecs_os_free(it->table.sources);
     ecs_os_free(it->op_ctx);
     ecs_os_free(it->table.components);
     it->registers = NULL;
@@ -3352,8 +3352,10 @@ void set_iter_table(
     iter->entities = &entities[offset];
 
     /* Set table parameters */
+    
     it->table.columns = rule_get_columns_frame(it, cur);
     it->table.data = data;
+    it->table.table = table;
     iter->table_columns = data->columns;
 
     ecs_assert(it->table.components != NULL, ECS_INTERNAL_ERROR, NULL);
@@ -3446,10 +3448,15 @@ bool is_control_flow(
 bool ecs_rule_next(
     ecs_iter_t *iter)
 {
+    ecs_assert(iter != NULL, ECS_INVALID_PARAMETER, NULL);
+
     ecs_rule_iter_t *it = &iter->iter.rule;
     const ecs_rule_t *rule = it->rule;
     bool redo = it->redo;
     int32_t last_frame = -1;
+
+    /* Can't iterate an iterator that's already depleted */
+    ecs_assert(it->op != -1, ECS_INVALID_PARAMETER, NULL);
 
     do {
         /* Evaluate an operation. The result of an operation determines the

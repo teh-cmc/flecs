@@ -130,7 +130,7 @@ void register_on_delete_object(ecs_iter_t *it) {
     ecs_id_t id = ecs_term_id(it, 1);
     int i;
     for (i = 0; i < it->count; i ++) {
-        ecs_entity_t e = it->entities[i];
+        ecs_entity_t e = ecs_strip_generation(it->entities[i]);
         ecs_id_record_t *r = ecs_ensure_id_record(it->world, e);
         ecs_assert(r != NULL, ECS_INTERNAL_ERROR, NULL);
         r->on_delete_object = ECS_PAIR_OBJECT(id);

@@ -1463,6 +1463,16 @@ void register_monitors(
 }
 
 static
+void check_term_id(
+    ecs_term_id_t *id)
+{
+    (void)id;
+    ecs_assert(id->entity == EcsThis || id->var != EcsVarIsVariable, 
+        ECS_UNSUPPORTED, NULL);
+    ecs_assert(!(id->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
+}
+
+static
 void process_signature(
     ecs_world_t *world,
     ecs_query_t *query)
@@ -1478,21 +1488,9 @@ void process_signature(
         ecs_oper_kind_t op = term->oper; 
         ecs_inout_kind_t inout = term->inout;
 
-        (void)pred;
-        (void)obj;
-
-        /* Queries do not support variables */
-        ecs_assert(pred->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-        ecs_assert(subj->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-        ecs_assert(obj->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-
-        /* Queries do not support subset substitutions */
-        ecs_assert(!(pred->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
-        ecs_assert(!(subj->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
-        ecs_assert(!(obj->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
+        check_term_id(pred);
+        check_term_id(subj);
+        check_term_id(obj);
 
         /* Superset/subset substitutions aren't supported for pred/obj */
         ecs_assert(pred->set.mask == EcsDefaultSet, ECS_UNSUPPORTED, NULL);
@@ -2258,6 +2256,7 @@ void ecs_query_fini(
     ecs_vector_free(query->tables);
     ecs_vector_free(query->empty_tables);
     ecs_vector_free(query->table_slices);
+    
     ecs_filter_fini(&query->filter);
     
     /* Remove query from storage */

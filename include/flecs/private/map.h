@@ -223,7 +223,7 @@ public:
     }
 
     T& get(K& key) {
-        static_cast<T*>(_ecs_map_get(m_map, sizeof(T),
+        return *static_cast<T*>(_ecs_map_get(m_map, sizeof(T),
             reinterpret_cast<ecs_map_key_t>(key)));
     }
 

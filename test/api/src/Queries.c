@@ -1271,3 +1271,129 @@ void Queries_get_filter() {
 
     ecs_fini(world);
 }
+
+void Queries_get_component_size() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_COMPONENT(world, Position);
+    ECS_COMPONENT(world, Mass);
+
+    ecs_query_t *q = ecs_query_new(world, "Position, Mass");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new_id(world);
+    ecs_add(world, e, Position);
+    ecs_add(world, e, Mass);
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), sizeof(Position));
+    test_int(ecs_term_size(&it, 2), sizeof(Mass));
+
+    ecs_fini(world);
+}
+
+void Queries_get_tag_size() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_TAG(world, TagA);
+    ECS_TAG(world, TagB);
+
+    ecs_query_t *q = ecs_query_new(world, "TagA, TagB");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new_id(world);
+    ecs_add(world, e, TagA);
+    ecs_add(world, e, TagB);
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), 0);
+    test_int(ecs_term_size(&it, 2), 0);
+
+    ecs_fini(world);
+}
+
+void Queries_get_pair_relation_size() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_COMPONENT(world, Position);
+    ECS_COMPONENT(world, Mass);
+
+    ecs_query_t *q = ecs_query_new(world, "(Position, Mass)");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new_id(world);
+    ecs_add_pair(world, e, ecs_id(Position), ecs_id(Mass));
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), sizeof(Position));
+
+    ecs_fini(world);
+}
+
+void Queries_get_pair_object_size() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_TAG(world, Rel);
+    ECS_COMPONENT(world, Mass);
+
+    ecs_query_t *q = ecs_query_new(world, "(Rel, Mass)");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new_id(world);
+    ecs_add_pair(world, e, Rel, ecs_id(Mass));
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), sizeof(Mass));
+
+    ecs_fini(world);
+}
+
+void Queries_get_pair_tag_size() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_TAG(world, Rel);
+    ECS_TAG(world, Obj);
+
+    ecs_query_t *q = ecs_query_new(world, "(Rel, Obj)");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new_id(world);
+    ecs_add_pair(world, e, Rel, Obj);
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), 0);
+
+    ecs_fini(world);
+}
+
+void Queries_get_component_size_other_entity() {
+    ecs_world_t *world = ecs_init();
+
+    ECS_COMPONENT(world, Position);
+    ECS_COMPONENT(world, Mass);
+
+    ECS_ENTITY(world, E, Mass);
+
+    ecs_query_t *q = ecs_query_new(world, "Position, \\E:Mass");
+    test_assert(q != NULL);
+
+    ecs_entity_t e = ecs_new(world, Position);
+
+    ecs_iter_t it = ecs_query_iter(q);
+    test_assert(ecs_query_next(&it));
+    test_int(it.count, 1);
+    test_int(ecs_term_size(&it, 1), sizeof(Position));
+    test_int(ecs_term_size(&it, 2), sizeof(Mass));
+
+    ecs_fini(world);
+}

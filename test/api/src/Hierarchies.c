@@ -1569,3 +1569,22 @@ void Hierarchies_cascade_after_recycled_parent_change() {
 
     ecs_fini(world);
 }
+
+void Hierarchies_scope_iter_recycled_parent() {
+    ecs_world_t *world = ecs_init();
+
+    ecs_entity_t parent = ecs_new_id(world);
+    ecs_delete(world, parent);
+
+    parent = ecs_new_id(world);
+    test_assert(ecs_strip_generation(parent) != parent);
+
+    ecs_entity_t child = ecs_new_w_pair(world, EcsChildOf, parent);
+
+    ecs_iter_t it = ecs_scope_iter(world, parent);
+    test_assert(ecs_scope_next(&it));
+    test_int(it.count, 1);
+    test_int(it.entities[0], child);
+
+    ecs_fini(world);
+}

@@ -393,32 +393,14 @@ void test_1_comp(const char *expr) {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 3);
-    test_int(it.entities[0], e1);
-    test_int(it.entities[1], e2);
-    test_int(it.entities[2], e3);
-
-    Position *p = ecs_column(&it, Position, 1);
-    test_assert(p != NULL);
-
-    test_int(p[0].x, 10);
-    test_int(p[0].y, 20);
-    test_int(p[1].x, 30);
-    test_int(p[1].y, 40);
-    test_int(p[2].x, 50);
-    test_int(p[2].y, 60);        
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_int(it.entities[0], e4);
-
-    p = ecs_column(&it, Position, 1);
-    test_assert(p != NULL);
-    test_int(p[0].x, 70);
-    test_int(p[0].y, 80);
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        {e1, e2, e3, e4},
+        {{ecs_id(Position)}},
+        {
+            (Position[]){{10, 20}, {30, 40}, {50, 60}, {70, 80}}
+        },
+        2
+    }));
 
     ecs_rule_fini(r);
 
@@ -451,38 +433,15 @@ void test_2_comp(const char *expr) {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 3);
-    test_int(it.entities[0], e1);
-    test_int(it.entities[1], e2);
-    test_int(it.entities[2], e3);
-
-    Position *p = ecs_column(&it, Position, 1);
-    test_assert(p != NULL);
-    Velocity *v = ecs_column(&it, Velocity, 2);
-    test_assert(v != NULL);
-
-    test_int(p[0].x, 10); test_int(p[0].y, 20);
-    test_int(p[1].x, 30); test_int(p[1].y, 40);
-    test_int(p[2].x, 50); test_int(p[2].y, 60);        
-
-    test_int(v[0].x, 1); test_int(v[0].y, 2);
-    test_int(v[1].x, 3); test_int(v[1].y, 4);
-    test_int(v[2].x, 5); test_int(v[2].y, 6);    
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_int(it.entities[0], e4);
-
-    p = ecs_column(&it, Position, 1);
-    test_assert(p != NULL);
-    v = ecs_column(&it, Velocity, 2);
-    test_assert(v != NULL);
-
-    test_int(p[0].x, 70); test_int(p[0].y, 80);
-    test_int(v[0].x, 7); test_int(v[0].y, 8);
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        {e1, e2, e3, e4},
+        {{ecs_id(Position), ecs_id(Velocity)}},
+        {
+            (Position[]){{10, 20}, {30, 40}, {50, 60}, {70, 80}},
+            (Velocity[]){{1, 2}, {3, 4}, {5, 6}, {7, 8}}
+        },
+        2
+    }));
 
     ecs_rule_fini(r);
 
@@ -763,19 +722,11 @@ void Rules_find_1_pair() {
     test_assert(r != NULL);
 
     ecs_iter_t it = ecs_rule_iter(r);
-    
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "BB8");  
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");    
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"BB8", "Luke", "Rey"},
+        .term_ids_expr = {{"(HomePlanet,Tatooine)"}}
+    }));
     
     ecs_fini(world);
 }
@@ -793,14 +744,10 @@ void Rules_find_2_pairs() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");    
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"Luke", "Rey"},
+        .term_ids_expr = {{"(HomePlanet,Tatooine)", "(Enemy,Palpatine)"}}
+    }));
     
     ecs_fini(world);
 }
@@ -821,79 +768,28 @@ void Rules_find_w_pred_var() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "Name");
-    test_var(&it, x_var, "Name");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "Human");  
-    test_var(&it, x_var, "Human");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "Jedi");  
-    test_var(&it, x_var, "Jedi");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda");
-    test_column_entity(&it, 1, "Name");
-    test_var(&it, x_var, "Name");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda");
-    test_column_entity(&it, 1, "Creature");
-    test_var(&it, x_var, "Creature");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda");
-    test_column_entity(&it, 1, "Jedi");
-    test_var(&it, x_var, "Jedi");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Leia");
-    test_column_entity(&it, 1, "Name");
-    test_var(&it, x_var, "Name");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Leia");
-    test_column_entity(&it, 1, "Human"); 
-    test_var(&it, x_var, "Human");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Leia");
-    test_column_entity(&it, 1, "Jedi");
-    test_var(&it, x_var, "Jedi");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "Name");
-    test_var(&it, x_var, "Name");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "Human");  
-    test_var(&it, x_var, "Human");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "Jedi");
-    test_var(&it, x_var, "Jedi");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {
+            "Luke", "Luke", "Luke", 
+            "Yoda", "Yoda", "Yoda", 
+            "Leia", "Leia", "Leia", 
+            "Rey", "Rey", "Rey"
+        },
+        .term_ids_expr = {
+            {"Name", "Jedi"}, {"Human", "Jedi"},    {"Jedi", "Jedi"},
+            {"Name", "Jedi"}, {"Creature", "Jedi"}, {"Jedi", "Jedi"},
+            {"Name", "Jedi"}, {"Human", "Jedi"},    {"Jedi", "Jedi"},
+            {"Name", "Jedi"}, {"Human", "Jedi"},    {"Jedi", "Jedi"},
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "Name", "Human", "Jedi",
+                "Name", "Creature", "Jedi",
+                "Name", "Human", "Jedi",
+                "Name", "Human", "Jedi",
+            }}
+        }
+    }));
     
     ecs_fini(world);
 }
@@ -914,19 +810,16 @@ void Rules_find_w_pred_var_explicit_subject() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 0);
-    test_var(&it, x_var, "Name");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 0);
-    test_var(&it, x_var, "Human");  
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 0);
-    test_var(&it, x_var, "Jedi");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .term_ids_expr = {
+            {"Name"}, {"Human"}, {"Jedi"}
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "Name", "Human", "Jedi"
+            }}
+        }
+    }));
 
     ecs_fini(world);
 }
@@ -947,37 +840,19 @@ void Rules_find_1_pair_w_object_var() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "BB8"); 
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "Tatooine");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "DarthVader");
-    test_column_entity(&it, 1, "(HomePlanet,Mustafar)");
-    test_var(&it, x_var, "Mustafar");
-    
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "Tatooine");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda"); 
-    test_column_entity(&it, 1, "(HomePlanet,Dagobah)");
-    test_var(&it, x_var, "Dagobah");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "Tatooine");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"BB8", "DarthVader", "Luke", "Yoda", "Rey"},
+        .term_ids_expr = {
+            {"(HomePlanet,Tatooine)"}, {"(HomePlanet,Mustafar)"}, 
+            {"(HomePlanet,Tatooine)"}, {"(HomePlanet,Dagobah)"}, 
+            {"(HomePlanet,Tatooine)"}
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "Tatooine", "Mustafar", "Tatooine", "Dagobah", "Tatooine"
+            }}
+        }
+    }));
     
     ecs_fini(world);
 }
@@ -1000,47 +875,24 @@ void Rules_find_2_pairs_w_object_var() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_column_entity(&it, 2, "(Enemy,DarthVader)");
-    test_var(&it, x_var, "Tatooine");
-    test_var(&it, y_var, "DarthVader");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_column_entity(&it, 2, "(Enemy,Palpatine)");
-    test_var(&it, x_var, "Tatooine");
-    test_var(&it, y_var, "Palpatine");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda");
-    test_column_entity(&it, 1, "(HomePlanet,Dagobah)");
-    test_column_entity(&it, 2, "(Enemy,DarthVader)");
-    test_var(&it, x_var, "Dagobah");
-    test_var(&it, y_var, "DarthVader");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Yoda");
-    test_column_entity(&it, 1, "(HomePlanet,Dagobah)");
-    test_column_entity(&it, 2, "(Enemy,Palpatine)");
-    test_var(&it, x_var, "Dagobah");
-    test_var(&it, y_var, "Palpatine");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_column_entity(&it, 2, "(Enemy,Palpatine)");
-    test_var(&it, x_var, "Tatooine");
-    test_var(&it, y_var, "Palpatine");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"Luke", "Luke", "Yoda", "Yoda", "Rey"},
+        .term_ids_expr = {
+            {"(HomePlanet,Tatooine)", "(Enemy,DarthVader)"}, 
+            {"(HomePlanet,Tatooine)", "(Enemy,Palpatine)"}, 
+            {"(HomePlanet,Dagobah)", "(Enemy,DarthVader)"},
+            {"(HomePlanet,Dagobah)", "(Enemy,Palpatine)"}, 
+            {"(HomePlanet,Tatooine)", "(Enemy,Palpatine)"}
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "Tatooine", "Tatooine", "Dagobah", "Dagobah", "Tatooine"
+            }},
+            {y_var, .entity_names = {
+                "DarthVader", "Palpatine", "DarthVader", "Palpatine", "Palpatine"
+            }}            
+        }
+    }));
     
     ecs_fini(world);
 }
@@ -1061,25 +913,17 @@ void Rules_find_1_pair_w_pred_var() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "BB8"); 
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "HomePlanet");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "HomePlanet");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_var(&it, x_var, "HomePlanet");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"BB8", "Luke", "Rey"},
+        .term_ids_expr = {
+            {"(HomePlanet,Tatooine)"},
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "HomePlanet"
+            }}          
+        }
+    }));
     
     ecs_fini(world);    
 }
@@ -1102,23 +946,20 @@ void Rules_find_2_pairs_w_pred_var() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Luke");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_column_entity(&it, 2, "(Enemy,Palpatine)");
-    test_var(&it, x_var, "HomePlanet");
-    test_var(&it, y_var, "Enemy");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Rey");
-    test_column_entity(&it, 1, "(HomePlanet,Tatooine)");
-    test_column_entity(&it, 2, "(Enemy,Palpatine)");
-    test_var(&it, x_var, "HomePlanet");
-    test_var(&it, y_var, "Enemy");    
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"Luke", "Rey"},
+        .term_ids_expr = {
+            {"(HomePlanet,Tatooine)", "(Enemy,Palpatine)"}
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "HomePlanet"
+            }},
+            {y_var, .entity_names = {
+                "Enemy"
+            }}    
+        }
+    }));
     
     ecs_fini(world);
 }
@@ -1139,19 +980,18 @@ void Rules_find_cyclic_pairs() {
 
     ecs_iter_t it = ecs_rule_iter(r);
 
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "HanSolo");
-    test_column_entity(&it, 1, "(Likes,Leia)");
-    test_var(&it, x_var, "Leia");
-
-    test_assert(ecs_rule_next(&it));
-    test_int(it.count, 1);
-    test_str(ecs_get_name(world, it.entities[0]), "Leia");
-    test_column_entity(&it, 1, "(Likes,HanSolo)");
-    test_var(&it, x_var, "HanSolo");
-
-    test_assert(!ecs_rule_next(&it));
+    test_true(test_iter(&it, ecs_rule_next, &(ecs_iter_result_t){
+        .entity_names = {"HanSolo", "Leia"},
+        .term_ids_expr = {
+            {"(Likes,Leia)", "(Likes,HanSolo)"},
+            {"(Likes,HanSolo)", "(Likes,Leia)"}
+        },
+        .variables = {
+            {x_var, .entity_names = {
+                "Leia", "HanSolo"
+            }}   
+        }
+    }));
     
     ecs_fini(world);
 }

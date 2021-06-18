@@ -7898,6 +7898,18 @@ bool ecs_is_valid(
     return !ecs_exists(world, entity) || ecs_is_alive(world, entity);
 }
 
+/* Strip generation from entity id */
+ecs_id_t ecs_strip_generation(
+    ecs_entity_t e)
+{
+    /* If this is not a pair, erase the generation bits */
+    if (!(e & ECS_ROLE_MASK)) {
+        e &= ~ECS_GENERATION_MASK;
+    }
+
+    return e;
+}
+
 bool ecs_is_alive(
     const ecs_world_t *world,
     ecs_entity_t entity)
@@ -7916,7 +7928,10 @@ ecs_entity_t ecs_get_alive(
     ecs_entity_t entity)
 {
     ecs_assert(world != NULL, ECS_INVALID_PARAMETER, NULL);
-    ecs_assert(entity != 0, ECS_INVALID_PARAMETER, NULL);
+    
+    if (!entity) {
+        return 0;
+    }
 
     if (ecs_is_alive(world, entity)) {
         return entity;
@@ -11433,6 +11448,7 @@ ecs_rule_op_t* create_operation(
 
     ecs_rule_op_t *result = &rule->operations[cur];
     memset(result, 0, sizeof(ecs_rule_op_t));
+
     return result;
 }
 
@@ -11664,7 +11680,7 @@ ecs_entity_t* rule_get_sources_frame(
     ecs_rule_iter_t *it,
     int32_t frame)    
 {
-    return &it->sources[frame * it->rule->filter.term_count];
+    return &it->table.sources[frame * it->rule->filter.term_count];
 }
 
 static
@@ -12364,7 +12380,7 @@ int scan_variables(
 
         /* Evaluate the subject. The predicate and object are not evaluated, 
          * since they never can be elected as root. */
-        if (!term->args[0].entity || term->args[0].entity == EcsThis) {
+        if (term->args[0].var == EcsVarIsVariable) {
             const char *subj_name = term->args[0].name;
 
             ecs_rule_var_t *subj = find_variable(
@@ -13309,6 +13325,7 @@ void ecs_rule_fini(
     for (i = 0; i < rule->variable_count; i ++) {
         ecs_os_free(rule->variables[i].name);
     }
+
     ecs_os_free(rule->variables);
     ecs_os_free(rule->operations);
 
@@ -13532,7 +13549,7 @@ ecs_iter_t ecs_rule_iter(
             it->columns = ecs_os_malloc(rule->operation_count * 
                 rule->filter.term_count * ECS_SIZEOF(int32_t));
 
-            it->sources = ecs_os_calloc(rule->operation_count *
+            it->table.sources = ecs_os_calloc(rule->operation_count *
                 rule->filter.term_count * ECS_SIZEOF(ecs_entity_t));
         }
     }
@@ -13553,8 +13570,6 @@ ecs_iter_t ecs_rule_iter(
     if (result.column_count) {
         it->table.components = ecs_os_malloc(
             result.column_count * ECS_SIZEOF(ecs_entity_t));
-        it->table.sources = ecs_os_malloc(
-            result.column_count * ECS_SIZEOF(ecs_entity_t));            
     }
 
     return result;
@@ -13566,7 +13581,7 @@ void ecs_rule_iter_free(
     ecs_rule_iter_t *it = &iter->iter.rule;
     ecs_os_free(it->registers);
     ecs_os_free(it->columns);
-    ecs_os_free(it->sources);
+    ecs_os_free(it->table.sources);
     ecs_os_free(it->op_ctx);
     ecs_os_free(it->table.components);
     it->registers = NULL;
@@ -14564,8 +14579,10 @@ void set_iter_table(
     iter->entities = &entities[offset];
 
     /* Set table parameters */
+    
     it->table.columns = rule_get_columns_frame(it, cur);
     it->table.data = data;
+    it->table.table = table;
     iter->table_columns = data->columns;
 
     ecs_assert(it->table.components != NULL, ECS_INTERNAL_ERROR, NULL);
@@ -14658,10 +14675,15 @@ bool is_control_flow(
 bool ecs_rule_next(
     ecs_iter_t *iter)
 {
+    ecs_assert(iter != NULL, ECS_INVALID_PARAMETER, NULL);
+
     ecs_rule_iter_t *it = &iter->iter.rule;
     const ecs_rule_t *rule = it->rule;
     bool redo = it->redo;
     int32_t last_frame = -1;
+
+    /* Can't iterate an iterator that's already depleted */
+    ecs_assert(it->op != -1, ECS_INVALID_PARAMETER, NULL);
 
     do {
         /* Evaluate an operation. The result of an operation determines the
@@ -19549,7 +19571,7 @@ void do_register_each_id(
             has_childof = true;
         } 
 
-        do_register_id(world, table, id, i, unregister);
+        do_register_id(world, table, ecs_strip_generation(id), i, unregister);
 
         if (ECS_HAS_ROLE(id, PAIR)) {
             ecs_entity_t pred_w_wildcard = ecs_pair(
@@ -19608,6 +19630,7 @@ ecs_id_record_t* ecs_ensure_id_record(
     const ecs_world_t *world,
     ecs_id_t id)
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     return ecs_map_ensure(world->id_index, ecs_id_record_t, id);
 }
 
@@ -19615,6 +19638,7 @@ ecs_id_record_t* ecs_get_id_record(
     const ecs_world_t *world,
     ecs_id_t id)
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     return ecs_map_get(world->id_index, ecs_id_record_t, id);
 }
 
@@ -19622,6 +19646,7 @@ void ecs_clear_id_record(
     const ecs_world_t *world,
     ecs_id_t id)    
 {
+    ecs_assert(ecs_strip_generation(id) == id, ECS_INTERNAL_ERROR, NULL);
     ecs_id_record_t *r = ecs_get_id_record(world, id);
     if (!r) {
         return;
@@ -20491,6 +20516,18 @@ bool ecs_term_is_trivial(
     return true;
 }
 
+static
+void populate_variable(
+    ecs_term_id_t *id)
+{
+    if (id->entity == EcsThis) {
+        id->var = EcsVarIsVariable;
+        if (!id->name) {
+            id->name = ecs_os_strdup(".");
+        }
+    }
+}
+
 int ecs_term_finalize(
     const ecs_world_t *world,
     const char *name,
@@ -20534,6 +20571,10 @@ int ecs_term_finalize(
             return -1;
         }
     }
+
+    populate_variable(&term->pred);
+    populate_variable(&term->args[0]);
+    populate_variable(&term->args[1]);
 
     return 0;
 }
@@ -24056,6 +24097,16 @@ void register_monitors(
 }
 
 static
+void check_term_id(
+    ecs_term_id_t *id)
+{
+    (void)id;
+    ecs_assert(id->entity == EcsThis || id->var != EcsVarIsVariable, 
+        ECS_UNSUPPORTED, NULL);
+    ecs_assert(!(id->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
+}
+
+static
 void process_signature(
     ecs_world_t *world,
     ecs_query_t *query)
@@ -24071,21 +24122,9 @@ void process_signature(
         ecs_oper_kind_t op = term->oper; 
         ecs_inout_kind_t inout = term->inout;
 
-        (void)pred;
-        (void)obj;
-
-        /* Queries do not support variables */
-        ecs_assert(pred->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-        ecs_assert(subj->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-        ecs_assert(obj->var != EcsVarIsVariable, 
-            ECS_UNSUPPORTED, NULL);
-
-        /* Queries do not support subset substitutions */
-        ecs_assert(!(pred->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
-        ecs_assert(!(subj->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
-        ecs_assert(!(obj->set.mask & EcsSubSet), ECS_UNSUPPORTED, NULL);
+        check_term_id(pred);
+        check_term_id(subj);
+        check_term_id(obj);
 
         /* Superset/subset substitutions aren't supported for pred/obj */
         ecs_assert(pred->set.mask == EcsDefaultSet, ECS_UNSUPPORTED, NULL);
@@ -24851,6 +24890,7 @@ void ecs_query_fini(
     ecs_vector_free(query->tables);
     ecs_vector_free(query->empty_tables);
     ecs_vector_free(query->table_slices);
+    
     ecs_filter_fini(&query->filter);
     
     /* Remove query from storage */
@@ -27157,6 +27197,28 @@ void* get_term(
     }
 }
 
+static
+size_t table_column_size(
+    ecs_table_t *table,
+    int32_t column_index)
+{
+    /* See ecs_iter_type */
+    ecs_assert(table != NULL, ECS_INVALID_PARAMETER, NULL);
+    ecs_assert(column_index >= 0, ECS_INVALID_PARAMETER, NULL);
+    
+    ecs_assert(column_index < ecs_vector_count(table->type), 
+        ECS_INVALID_PARAMETER, NULL);
+
+    if (table->column_count <= column_index) {
+        return 0;
+    }
+
+    ecs_data_t *data = ecs_table_get_data(table);
+    ecs_column_t *column = &data->columns[column_index];
+    
+    return ecs_to_size_t(column->size);
+}
+
 
 /* --- Public API --- */
 
@@ -27255,6 +27317,16 @@ size_t ecs_term_size(
     ecs_assert(it->table != NULL, ECS_INTERNAL_ERROR, NULL);
     ecs_assert(it->table->columns != NULL, ECS_INTERNAL_ERROR, NULL);
     int32_t table_column = it->table->columns[index - 1];
+    
+    if (table_column == 0) {
+        return 0;
+    } else if (table_column < 0) {
+        ecs_entity_t src = it->table->sources[index - 1];
+        ecs_record_t *r = ecs_eis_get(it->world, src);
+        ecs_assert(r != NULL, ECS_INTERNAL_ERROR, NULL);
+        return table_column_size(r->table, -table_column - 1);
+    }
+
     return ecs_iter_column_size(it, table_column - 1);
 }
 
@@ -27312,19 +27384,8 @@ size_t ecs_iter_column_size(
     /* See ecs_iter_type */
     ecs_assert(it->table != NULL, ECS_INVALID_PARAMETER, NULL);
     ecs_assert(it->table->table != NULL, ECS_INTERNAL_ERROR, NULL);
-    
-    ecs_table_t *table = it->table->table;
-    ecs_assert(column_index < ecs_vector_count(table->type), 
-        ECS_INVALID_PARAMETER, NULL);
-
-    if (table->column_count <= column_index) {
-        return 0;
-    }
-
-    ecs_column_t *columns = it->table_columns;
-    ecs_column_t *column = &columns[column_index];
-    
-    return ecs_to_size_t(column->size);
+    ecs_assert(column_index >= 0, ECS_INVALID_PARAMETER, NULL);
+    return table_column_size(it->table->table, column_index);
 }
 
 // DEPRECATED
@@ -30862,7 +30923,7 @@ void register_on_delete_object(ecs_iter_t *it) {
     ecs_id_t id = ecs_term_id(it, 1);
     int i;
     for (i = 0; i < it->count; i ++) {
-        ecs_entity_t e = it->entities[i];
+        ecs_entity_t e = ecs_strip_generation(it->entities[i]);
         ecs_id_record_t *r = ecs_ensure_id_record(it->world, e);
         ecs_assert(r != NULL, ECS_INTERNAL_ERROR, NULL);
         r->on_delete_object = ECS_PAIR_OBJECT(id);

@@ -884,3 +884,59 @@ void Entity_init_w_with_w_name_scope() {
 
     ecs_fini(world);
 }
+
+void Entity_strip_generation() {
+    ecs_world_t *world = ecs_init();
+
+    ecs_entity_t e = ecs_new_id(world);
+    test_assert(e != 0);
+    test_assert(ecs_strip_generation(e) == e);
+
+    ecs_fini(world);
+}
+
+void Entity_strip_generation_from_recycled_id() {
+    ecs_world_t *world = ecs_init();
+
+    ecs_entity_t e1 = ecs_new_id(world);
+    test_assert(e1 != 0);
+    ecs_delete(world, e1);
+
+    ecs_entity_t e2 = ecs_new_id(world);
+    test_assert(e1 != e2);
+    test_assert(ecs_strip_generation(e2) != e2);
+    test_assert(ecs_strip_generation(e2) == e1);
+    test_assert(ecs_strip_generation(e2) == (uint32_t)e2);
+
+    ecs_fini(world);
+}
+
+void Entity_strip_generation_from_id_w_role() {
+    ecs_world_t *world = ecs_init();
+
+    ecs_entity_t e1 = ecs_new_id(world);
+    test_assert(e1 != 0);
+    ecs_delete(world, e1);
+
+    ecs_entity_t e2 = ecs_new_id(world);
+    test_assert(e1 != e2);
+
+    ecs_entity_t e2r = e2 | ECS_DISABLED;
+    test_assert(ecs_strip_generation(e2r) == e2r);
+
+    ecs_fini(world);
+}
+
+void Entity_strip_generation_from_pair() {
+    ecs_world_t *world = ecs_init();
+
+    ecs_entity_t r = ecs_new_id(world);
+    ecs_entity_t o = ecs_new_id(world);
+    test_assert(r != 0);
+    test_assert(o != 0);
+
+    ecs_id_t pair = ecs_pair(r, o);
+    test_assert(ecs_strip_generation(pair) == pair);
+
+    ecs_fini(world);
+}

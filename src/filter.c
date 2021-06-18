@@ -191,6 +191,18 @@ bool ecs_term_is_trivial(
     return true;
 }
 
+static
+void populate_variable(
+    ecs_term_id_t *id)
+{
+    if (id->entity == EcsThis) {
+        id->var = EcsVarIsVariable;
+        if (!id->name) {
+            id->name = ecs_os_strdup(".");
+        }
+    }
+}
+
 int ecs_term_finalize(
     const ecs_world_t *world,
     const char *name,
@@ -234,6 +246,10 @@ int ecs_term_finalize(
             return -1;
         }
     }
+
+    populate_variable(&term->pred);
+    populate_variable(&term->args[0]);
+    populate_variable(&term->args[1]);
 
     return 0;
 }

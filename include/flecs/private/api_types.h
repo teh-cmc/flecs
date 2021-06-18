@@ -137,7 +137,6 @@ typedef struct ecs_rule_iter_t {
     struct ecs_rule_reg_t *registers;    /**< Variable storage */
     struct ecs_rule_op_ctx_t *op_ctx;    /**< Operation-specific state */
     int32_t *columns;                    /**< Table column indices */
-    ecs_entity_t *sources;               /**< Term sources */
     
     ecs_iter_table_t table;              /**< Result in case of table */
     ecs_entity_t entity;                 /**< Result in case of 1 entity */

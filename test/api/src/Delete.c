@@ -535,8 +535,10 @@ void Delete_get_alive_for_0() {
 
     ecs_world_t *world = ecs_init();
 
-    test_expect_abort();
-    ecs_get_alive(world, 0);
+    ecs_entity_t r = ecs_get_alive(world, 0);
+    test_assert(r == 0);
+    
+    ecs_fini(world);
 }
 
 void Delete_get_alive_for_nonexistent() {

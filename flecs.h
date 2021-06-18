@@ -1174,7 +1174,7 @@ public:
     }
 
     T& get(K& key) {
-        static_cast<T*>(_ecs_map_get(m_map, sizeof(T),
+        return *static_cast<T*>(_ecs_map_get(m_map, sizeof(T),
             reinterpret_cast<ecs_map_key_t>(key)));
     }
 
@@ -2212,7 +2212,6 @@ typedef struct ecs_rule_iter_t {
     struct ecs_rule_reg_t *registers;    /**< Variable storage */
     struct ecs_rule_op_ctx_t *op_ctx;    /**< Operation-specific state */
     int32_t *columns;                    /**< Table column indices */
-    ecs_entity_t *sources;               /**< Term sources */
     
     ecs_iter_table_t table;              /**< Result in case of table */
     ecs_entity_t entity;                 /**< Result in case of 1 entity */
@@ -5201,6 +5200,11 @@ bool ecs_is_alive(
 FLECS_API
 ecs_entity_t ecs_get_alive(
     const ecs_world_t *world,
+    ecs_entity_t e);
+
+/** Strip generation id from entity. */
+FLECS_API
+ecs_id_t ecs_strip_generation(
     ecs_entity_t e);
 
 /** Ensure id is alive.
