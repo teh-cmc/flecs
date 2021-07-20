@@ -229,6 +229,7 @@ void ecs_filter_populate_from_table(
     const ecs_filter_t *filter,
     ecs_table_t *table,
     ecs_cached_type_t *matched,
+    ecs_entity_t **entities,
     void **columns)
 {
     ecs_assert(world != NULL, ECS_INVALID_PARAMETER,  NULL);
@@ -240,6 +241,8 @@ void ecs_filter_populate_from_table(
 
     int32_t i, count = filter->term_count;
     ecs_term_t *terms = filter->terms;
+
+    *entities = ecs_vector_first(data->entities, ecs_entity_t);
 
     for (i = 0; i < count; i ++) {
         ecs_term_t *term = &terms[i];
@@ -855,6 +858,9 @@ ecs_iter_t ecs_filter_iter(
                 term_count_actual * ECS_SIZEOF(ecs_entity_t));
         }
     }
+
+    it.term_count = filter->term_count;
+    it.term_count_actual = term_count_actual;
     
     return it;
 }
@@ -957,7 +963,8 @@ bool ecs_filter_next(
         }
 
         /* Skip empty tables */
-        if (!ecs_table_count(table)) {
+        int32_t count = ecs_table_count(table);
+        if (!count) {
             continue;
         }
         
@@ -972,8 +979,9 @@ bool ecs_filter_next(
 
         /* Populate table columns */
         ecs_filter_populate_from_table(
-            world, filter, table, &cached_type, it->columns);
+            world, filter, table, &cached_type, &it->entities, it->columns);
 
+        it->count = count;
         it->type = type;
         break;
 

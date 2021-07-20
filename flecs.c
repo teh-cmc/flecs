@@ -1772,6 +1772,7 @@ void ecs_filter_populate_from_table(
     const ecs_filter_t *filter,
     ecs_table_t *table,
     ecs_cached_type_t *matched,
+    ecs_entity_t **entities,
     void **columns);
 
 
@@ -16674,6 +16675,7 @@ void ecs_filter_populate_from_table(
     const ecs_filter_t *filter,
     ecs_table_t *table,
     ecs_cached_type_t *matched,
+    ecs_entity_t **entities,
     void **columns)
 {
     ecs_assert(world != NULL, ECS_INVALID_PARAMETER,  NULL);
@@ -16685,6 +16687,8 @@ void ecs_filter_populate_from_table(
 
     int32_t i, count = filter->term_count;
     ecs_term_t *terms = filter->terms;
+
+    *entities = ecs_vector_first(data->entities, ecs_entity_t);
 
     for (i = 0; i < count; i ++) {
         ecs_term_t *term = &terms[i];
@@ -17300,6 +17304,9 @@ ecs_iter_t ecs_filter_iter(
                 term_count_actual * ECS_SIZEOF(ecs_entity_t));
         }
     }
+
+    it.term_count = filter->term_count;
+    it.term_count_actual = term_count_actual;
     
     return it;
 }
@@ -17402,7 +17409,8 @@ bool ecs_filter_next(
         }
 
         /* Skip empty tables */
-        if (!ecs_table_count(table)) {
+        int32_t count = ecs_table_count(table);
+        if (!count) {
             continue;
         }
         
@@ -17417,8 +17425,9 @@ bool ecs_filter_next(
 
         /* Populate table columns */
         ecs_filter_populate_from_table(
-            world, filter, table, &cached_type, it->columns);
+            world, filter, table, &cached_type, &it->entities, it->columns);
 
+        it->count = count;
         it->type = type;
         break;
 
@@ -17462,7 +17471,7 @@ void observer_callback(ecs_iter_t *it) {
         void **columns = user_it.private.columns_storage;
 
         ecs_filter_populate_from_table(
-            world, &o->filter, table, &matched, columns);
+            world, &o->filter, table, &matched, &user_it.entities, columns);
 
         ecs_iter_init_from(&user_it, it);
 
@@ -20904,16 +20913,10 @@ bool ecs_query_next(
                 continue;
             }
 
-            ecs_filter_populate_from_table(
-                world, &query->filter, table, type_data, it->columns);
+            ecs_filter_populate_from_table(world, &query->filter, table, 
+                type_data, &it->entities, it->columns);
 
-            ecs_data_t *data = ecs_table_get_data(table);
-            ecs_assert(data != NULL, ECS_INTERNAL_ERROR, NULL);
-
-            ecs_entity_t *entity_buffer = ecs_vector_first(
-                data->entities, ecs_entity_t); 
-
-            it->entities = &entity_buffer[cur.first];
+            it->entities = &it->entities[cur.first];
             it->offset = cur.first;
             it->count = cur.count;
             it->private.total_count = cur.count;

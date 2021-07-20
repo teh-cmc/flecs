@@ -22,7 +22,7 @@ void observer_callback(ecs_iter_t *it) {
         void **columns = user_it.private.columns_storage;
 
         ecs_filter_populate_from_table(
-            world, &o->filter, table, &matched, columns);
+            world, &o->filter, table, &matched, &user_it.entities, columns);
 
         ecs_iter_init_from(&user_it, it);
 

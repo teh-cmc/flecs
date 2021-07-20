@@ -20,6 +20,7 @@
 /* Headers of public dependencies */
 #include <flecs.h>
 #include <flecs_os_api_bake.h>
+#include <flecs_test_common.h>
 #ifdef __BAKE__
 #include <bake_util.h>
 #endif

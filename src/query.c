@@ -1774,16 +1774,10 @@ bool ecs_query_next(
                 continue;
             }
 
-            ecs_filter_populate_from_table(
-                world, &query->filter, table, type_data, it->columns);
+            ecs_filter_populate_from_table(world, &query->filter, table, 
+                type_data, &it->entities, it->columns);
 
-            ecs_data_t *data = ecs_table_get_data(table);
-            ecs_assert(data != NULL, ECS_INTERNAL_ERROR, NULL);
-
-            ecs_entity_t *entity_buffer = ecs_vector_first(
-                data->entities, ecs_entity_t); 
-
-            it->entities = &entity_buffer[cur.first];
+            it->entities = &it->entities[cur.first];
             it->offset = cur.first;
             it->count = cur.count;
             it->private.total_count = cur.count;

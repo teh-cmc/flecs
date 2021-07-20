@@ -14,17 +14,28 @@
  * dependencies will automatically show up in this file. Include bake_config.h
  * in your main project file. Do not edit! */
 
-#ifndef BASIC_BAKE_CONFIG_H
-#define BASIC_BAKE_CONFIG_H
+#ifndef FLECS_TEST_COMMON_BAKE_CONFIG_H
+#define FLECS_TEST_COMMON_BAKE_CONFIG_H
 
 /* Headers of public dependencies */
 #include <flecs.h>
 #include <flecs_os_api_bake.h>
-#include <flecs_test_common.h>
-#ifdef __BAKE__
-#include <bake_util.h>
-#endif
 #include <bake_test.h>
+
+/* Convenience macro for exporting symbols */
+#ifndef flecs_test_common_STATIC
+#if flecs_test_common_EXPORTS && (defined(_MSC_VER) || defined(__MINGW32__))
+  #define FLECS_TEST_COMMON_API __declspec(dllexport)
+#elif flecs_test_common_EXPORTS
+  #define FLECS_TEST_COMMON_API __attribute__((__visibility__("default")))
+#elif defined _MSC_VER
+  #define FLECS_TEST_COMMON_API __declspec(dllimport)
+#else
+  #define FLECS_TEST_COMMON_API
+#endif
+#else
+  #define FLECS_TEST_COMMON_API
+#endif
 
 #endif
 

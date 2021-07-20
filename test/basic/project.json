@@ -8,7 +8,8 @@
         "coverage": false,
         "use": [
             "flecs",
-            "flecs.os_api.bake"
+            "flecs.os_api.bake",
+            "flecs.test.common"
         ]
     },
     "test": {

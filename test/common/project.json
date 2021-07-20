@@ -1,0 +1,13 @@
+{
+    "id": "flecs.test.common",
+    "type": "package",
+    "value": {
+        "author": "John Doe",
+        "description": "Common utilities for testing",
+        "use": [
+            "flecs", 
+            "flecs.os_api.bake",
+            "bake.test"
+        ]
+    }
+}

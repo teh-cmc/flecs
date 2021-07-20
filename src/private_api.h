@@ -542,6 +542,7 @@ void ecs_filter_populate_from_table(
     const ecs_filter_t *filter,
     ecs_table_t *table,
     ecs_cached_type_t *matched,
+    ecs_entity_t **entities,
     void **columns);
 
 
