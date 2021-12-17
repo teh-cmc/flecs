@@ -6702,7 +6702,7 @@ error:
     return NULL;
 }
 
-const void* ecs_get_ref_w_id(
+const void* ecs_get_ref_id(
     const ecs_world_t *world,
     ecs_ref_t *ref,
     ecs_entity_t entity,
@@ -13051,7 +13051,14 @@ void for_each_id(
     }
 }
 
+<<<<<<< HEAD
 void flecs_register_table(
+=======
+<<<<<<< HEAD
+/* -- Public API -- */
+
+bool ecs_progress(
+>>>>>>> 47b23853 (TEMP COMMIT)
     ecs_world_t *world,
     ecs_table_t *table)
 {
@@ -13606,9 +13613,31 @@ void ecs_emit(
     int32_t row = desc->offset;
     int32_t i, count = desc->count;
 
+<<<<<<< HEAD
     if (!count) {
         count = ecs_table_count(table) - row;
     }
+=======
+static
+int32_t win_ainc(
+    int32_t *count) 
+=======
+static
+int32_t qsort_partition(
+    ecs_world_t *world,
+    ecs_table_t *table,
+    ecs_data_t *data,
+    ecs_entity_t *entities,
+    void *ptr,    
+    int32_t elem_size,
+    int32_t lo,
+    int32_t hi,
+    ecs_order_by_action_t compare)
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+{
+    return InterlockedIncrement(count);
+}
+>>>>>>> 47b23853 (TEMP COMMIT)
 
     ecs_iter_t it = {
         .world = world,
@@ -13977,11 +14006,72 @@ void insert_table_node(
 
     compute_group_id(query, node->match);
 
+<<<<<<< HEAD
     ecs_query_table_list_t *list = ensure_node_list(query, node);
     if (list->last) {
         ecs_assert(query->list.first != NULL, ECS_INTERNAL_ERROR, NULL);
         ecs_assert(query->list.last != NULL, ECS_INTERNAL_ERROR, NULL);
         ecs_assert(list->first != NULL, ECS_INTERNAL_ERROR, NULL);
+=======
+static
+<<<<<<< HEAD
+ecs_entity_t ensure_entity(
+=======
+void add_table(
+    ecs_world_t *world,
+    ecs_query_t *query,
+    ecs_table_t *table)
+{
+
+}
+
+static
+bool match_table(
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+    ecs_world_t *world,
+    plecs_state_t *state,
+    const char *path,
+    bool is_subject)
+{
+<<<<<<< HEAD
+    if (!path) {
+        return 0;
+    }
+=======
+    return false;
+}
+
+static
+bool match_tables(
+    ecs_world_t *world,
+    ecs_query_t *query)
+{
+    ecs_iter_t it = ecs_filter_iter(world, &query->filter);
+    while (ecs_filter_next(&it)) {
+
+    }
+
+    return false;
+}
+
+/** When a table becomes empty remove it from the query list, or vice versa. */
+static
+void update_table(
+    ecs_query_t *query,
+    ecs_table_t *table,
+    bool empty)
+{
+    int32_t prev_count = ecs_query_table_count(query);
+    ecs_table_cache_set_empty(&query->cache, table, empty);
+    int32_t cur_count = ecs_query_table_count(query);
+
+    if (prev_count != cur_count) {
+        ecs_query_table_t *qt = ecs_table_cache_get(
+            &query->cache, ecs_query_table_t, table);
+        ecs_assert(qt != NULL, ECS_INTERNAL_ERROR, NULL);
+        ecs_query_table_match_t *cur, *next;
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+>>>>>>> 47b23853 (TEMP COMMIT)
 
         ecs_query_table_node_t *last = list->last;
         ecs_query_table_node_t *last_next = last->next;
@@ -14109,10 +14199,68 @@ bool get_match_monitor(
     int32_t i, t = -1, term_count = f->term_count_actual;
     table_dirty_state_t cur_dirty_state;
 
+<<<<<<< HEAD
     for (i = 0; i < term_count; i ++) {
         if (t == f->terms[i].index) {
             if (monitor[t + 1] != -1) {
                 continue;
+=======
+<<<<<<< HEAD
+        pred_as_subj = false;
+=======
+static
+void unmatch_table(
+    ecs_query_t *query,
+    ecs_table_t *table)
+{
+    ecs_table_cache_remove(&query->cache, ecs_query_table_t, table);
+}
+
+static
+void rematch_table(
+    ecs_world_t *world,
+    ecs_query_t *query,
+    ecs_table_t *table)
+{
+    ecs_query_table_t *match = ecs_table_cache_get(
+        &query->cache, ecs_query_table_t, table);
+
+    if (match_table(world, query, table)) {
+        /* If the table matches, and it is not currently matched, add */
+        if (match == NULL) {
+            add_table(world, query, table);
+
+        /* If table still matches and has cascade column, reevaluate the
+         * sources of references. This may have changed in case 
+         * components were added/removed to container entities */ 
+        } else if (query->cascade_by) {
+            resolve_cascade_subject(world, query, match, table, table->type);
+
+        /* If query has optional columns, it is possible that a column that
+         * previously had data no longer has data, or vice versa. Do a full
+         * rematch to make sure data is consistent. */
+        } else if (query->flags & EcsQueryHasOptional) {
+            unmatch_table(query, table);
+            if (!(query->flags & EcsQueryIsSubquery)) {
+                flecs_table_notify(world, table, &(ecs_table_event_t){
+                    .kind = EcsTableQueryUnmatch,
+                    .query = query
+                }); 
+            }
+            add_table(world, query, table);
+        }
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+    } else {
+        if (!obj) {
+            /* If no subject or object were provided, use predicate as subj 
+             * unless the expression explictly excluded the subject */
+            if (pred_as_subj) {
+                state->last_subject = pred;
+                subj = pred;
+            } else {
+                state->last_predicate = pred;
+                pred_as_subj = false;
+>>>>>>> 47b23853 (TEMP COMMIT)
             }
         }
 
@@ -14277,6 +14425,26 @@ bool check_table_monitor(
                 return true;
             } 
         }
+<<<<<<< HEAD
+=======
+
+<<<<<<< HEAD
+        if (!type) {
+            ecs_parser_error(name, expr, ptr - expr, 
+                "missing type for assignment");
+            return NULL;
+        }
+=======
+    if (!desc->parent) {
+        match_tables(world, result);
+    } else {
+        add_subquery(world, desc->parent, result);
+        result->parent = desc->parent;
+    }
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+
+        state->last_assign_id = type;
+>>>>>>> 47b23853 (TEMP COMMIT)
     }
 
     return false;
@@ -20587,14 +20755,81 @@ ecs_type_t ecs_table_get_type(
     return table->type;
 }
 
+<<<<<<< HEAD
 ecs_type_t ecs_table_get_storage_type(
     const ecs_table_t *table)
+=======
+<<<<<<< HEAD
+ecs_entity_t ecs_meta_get_type(
+    ecs_meta_cursor_t *cursor)
+>>>>>>> 47b23853 (TEMP COMMIT)
 {
     return table->storage_type;
 }
+=======
+        do {
+            first = iter->matches_left == 0;
+>>>>>>> c1cd7b3a (TEMP COMMIT)
 
+<<<<<<< HEAD
 int32_t ecs_table_storage_count(
     const ecs_table_t *table)
+=======
+/* Utility macro's to let the compiler do the conversion work for us */
+#define set_T(T, ptr, value)\
+    ((T*)ptr)[0] = ((T)value)
+
+#define case_T(kind, T, dst, src)\
+case kind:\
+    set_T(T, dst, src);\
+    break
+
+#define cases_T_float(dst, src)\
+    case_T(EcsOpF32,  ecs_f32_t,  dst, src);\
+    case_T(EcsOpF64,  ecs_f64_t,  dst, src)
+
+#define cases_T_signed(dst, src)\
+    case_T(EcsOpChar, ecs_char_t, dst, src);\
+    case_T(EcsOpI8,   ecs_i8_t,   dst, src);\
+    case_T(EcsOpI16,  ecs_i16_t,  dst, src);\
+    case_T(EcsOpI32,  ecs_i32_t,  dst, src);\
+    case_T(EcsOpI64,  ecs_i64_t,  dst, src);\
+    case_T(EcsOpIPtr, ecs_iptr_t, dst, src)
+
+#define cases_T_unsigned(dst, src)\
+    case_T(EcsOpByte, ecs_byte_t, dst, src);\
+    case_T(EcsOpU8,   ecs_u8_t,   dst, src);\
+    case_T(EcsOpU16,  ecs_u16_t,  dst, src);\
+    case_T(EcsOpU32,  ecs_u32_t,  dst, src);\
+    case_T(EcsOpU64,  ecs_u64_t,  dst, src);\
+    case_T(EcsOpUPtr, ecs_uptr_t, dst, src);\
+
+<<<<<<< HEAD
+#define cases_T_bool(dst, src)\
+case EcsOpBool:\
+    set_T(ecs_bool_t, dst, value != 0);\
+    break
+=======
+                /* Match the remainder of the terms */
+                match = flecs_filter_match_table(world, filter, table,
+                    it->ids, it->columns, it->subjects,
+                    it->match_indices, &iter->matches_left, first, 
+                    pivot_term);
+                if (!match) {
+                    iter->matches_left = 0;
+                    continue;
+                }
+   
+                ecs_assert(iter->matches_left != 0, ECS_INTERNAL_ERROR, NULL);
+            }
+>>>>>>> c1cd7b3a (TEMP COMMIT)
+
+static
+void conversion_error(
+    ecs_meta_cursor_t *cursor,
+    ecs_meta_type_op_t *op,
+    const char *from)
+>>>>>>> 47b23853 (TEMP COMMIT)
 {
     return ecs_vector_count(table->storage_type);
 }
@@ -35464,7 +35699,16 @@ void ecs_http_server_stop(
         http_close(srv->sock);
     }
 
+<<<<<<< HEAD
     ecs_os_thread_join(srv->thread);
+=======
+    const EcsComponent *c_info = flecs_component_from_id(world, component);
+    if (c_info) {
+        if (c_info->size && subj->entity != 0) {
+            if (entity) {
+                ecs_get_ref_id(world, ref, entity, component);
+            }
+>>>>>>> 47b23853 (TEMP COMMIT)
 
     /* Close all connections */
     int i, count = flecs_sparse_count(srv->connections);
@@ -36680,6 +36924,7 @@ const char* parse_scope_open(
             ecs_entity_t def_type_src = ecs_get_object_for_id(world, scope, 
                 0, ecs_pair(EcsDefaultChildComponent, EcsWildcard));
 
+<<<<<<< HEAD
             if (def_type_src) {
                 default_scope_type = ecs_get_object(
                     world, def_type_src, EcsDefaultChildComponent, 0);
@@ -36699,6 +36944,11 @@ const char* parse_scope_open(
 
         state->scope[state->sp] = scope;
         state->default_scope_type[state->sp] = default_scope_type;
+=======
+        references[ref_index].entity = ecs_get_alive(world, subject);
+        table_data->subjects[term_index] = subject;
+        ecs_get_ref_id(world, ref, subject, term->id);
+>>>>>>> 47b23853 (TEMP COMMIT)
     } else {
         state->scope[state->sp] = state->scope[state->sp - 1];
         state->default_scope_type[state->sp] = 
@@ -39016,12 +39266,21 @@ const char* ecs_parse_identifier(
     return ptr;
 }
 
+<<<<<<< HEAD
 static
 int parse_identifier(
     const char *token,
     ecs_term_id_t *out)
 {
     char ch = token[0];
+=======
+        /* Data is not from This */
+        if (it->references) {
+            /* Iterator provides cached references for non-This terms */
+            ecs_ref_t *ref = &it->references[-column - 1];
+            if (ptr_out) ptr_out[0] = (void*)ecs_get_ref_id(
+                world, ref, ref->entity, ref->component);
+>>>>>>> 47b23853 (TEMP COMMIT)
 
     const char *tptr = token;
     if (ch == TOK_AS_ENTITY) {

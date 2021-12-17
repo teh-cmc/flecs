@@ -1864,7 +1864,7 @@ bool ecs_filter_next_instanced(
                     iter->matches_left = 0;
                     continue;
                 }
-                    
+   
                 ecs_assert(iter->matches_left != 0, ECS_INTERNAL_ERROR, NULL);
             }
 
