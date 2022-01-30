@@ -1396,6 +1396,16 @@ ecs_vector_t* _ecs_vector_copy(
             __VA_ARGS__\
         }\
     }
+
+#define ecs_vector_each_rev(vector, T, var, ...)\
+    {\
+        int var##_i, var##_count = ecs_vector_count(vector);\
+        T* var##_array = ecs_vector_first(vector, T);\
+        for (var##_i = var##_count - 1; var##_i >= 0; var##_i --) {\
+            T* var = &var##_array[var##_i];\
+            __VA_ARGS__\
+        }\
+    }
 #endif
 #ifdef __cplusplus
 }

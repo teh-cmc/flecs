@@ -35093,7 +35093,7 @@ static
 void fini_actions(
     ecs_world_t *world)
 {
-    ecs_vector_each(world->fini_actions, ecs_action_elem_t, elem, {
+    ecs_vector_each_rev(world->fini_actions, ecs_action_elem_t, elem, {
         elem->action(world, elem->ctx);
     });
 
