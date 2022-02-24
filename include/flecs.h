@@ -167,7 +167,7 @@ typedef struct ecs_mixins_t ecs_mixins_t;
 #define ECS_MAX_ADD_REMOVE (32)
 
 /* Maximum number of terms cached in static arrays */
-#define ECS_TERM_CACHE_SIZE (4)
+#define ECS_TERM_CACHE_SIZE (8)
 
 /* Maximum number of terms in desc (larger, as these are temp objects) */
 #define ECS_TERM_DESC_CACHE_SIZE (16)
